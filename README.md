@@ -1,6 +1,6 @@
 <a href="https://www.llamacoder.io">
-  <img alt="Llama Coder" src="./public/og-image.png">
-  <h1 align="center">Llama Coder</h1>
+  <img alt="Turb0" src="./public/og-image.png">
+  <h1 align="center">Turb0</h1>
 </a>
 
 <p align="center">

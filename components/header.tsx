@@ -10,7 +10,7 @@ function Header() {
       <Link href="/" className="flex flex-row items-center gap-3">
         <img
           src="/fullLogo.png"
-          alt=""
+          alt="Turb0"
           className="mx-auto h-7 object-contain"
         />
         <svg

@@ -22,7 +22,7 @@ export async function generateMetadata({
 
   return {
     title,
-    description: `An app generated on LlamaCoder.io: ${title}`,
+    description: `An app generated on Turb0: ${title}`,
     openGraph: {
       images: [`/api/og?${searchParams}`],
     },
@@ -70,7 +70,7 @@ export default async function SharePage({
         >
           <span className="text-center">
             Powered by <span className="font-semibold">Together.ai</span> and{" "}
-            <span className="font-semibold">llamacoder</span>
+            <span className="font-semibold">Turb0</span>
           </span>
         </a>
       </div>
