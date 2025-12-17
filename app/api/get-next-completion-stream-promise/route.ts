@@ -1,6 +1,3 @@
-import { PrismaClient } from "@prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import { Pool } from "@neondatabase/serverless";
 import { z } from "zod";
 import Together from "together-ai";
 
@@ -30,23 +27,8 @@ function optimizeMessagesForTokens(
 }
 
 export async function POST(req: Request) {
-  const neon = new Pool({ connectionString: process.env.DATABASE_URL });
-  const adapter = new PrismaNeon(neon);
-  const prisma = new PrismaClient({ adapter });
-  const { messageId, model } = await req.json();
-
-  const message = await prisma.message.findUnique({
-    where: { id: messageId },
-  });
-
-  if (!message) {
-    return new Response(null, { status: 404 });
-  }
-
-  const messagesRes = await prisma.message.findMany({
-    where: { chatId: message.chatId, position: { lte: message.position } },
-    orderBy: { position: "asc" },
-  });
+  // No Prisma usage. Messages are passed in the body.
+  const { messages: rawMessages, model, chatId } = await req.json();
 
   let messages = z
     .array(
@@ -55,7 +37,7 @@ export async function POST(req: Request) {
         content: z.string(),
       }),
     )
-    .parse(messagesRes);
+    .parse(rawMessages);
 
   messages = optimizeMessagesForTokens(messages);
 
@@ -68,9 +50,9 @@ export async function POST(req: Request) {
     options.baseURL = "https://together.helicone.ai/v1";
     options.defaultHeaders = {
       "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-      "Helicone-Property-appname": "LlamaCoder",
-      "Helicone-Session-Id": message.chatId,
-      "Helicone-Session-Name": "LlamaCoder Chat",
+      "Helicone-Property-appname": "Turb0",
+      "Helicone-Session-Id": chatId, // Optional if provided
+      "Helicone-Session-Name": "Turb0 Chat",
     };
   }
 

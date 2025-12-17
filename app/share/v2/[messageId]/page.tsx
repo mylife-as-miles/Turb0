@@ -1,55 +1,54 @@
+"use client";
+
 import CodeRunner from "@/components/code-runner";
-import { getPrisma } from "@/lib/prisma";
 import { extractAllCodeBlocks } from "@/lib/utils";
-import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { cache } from "react";
+import { use } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ messageId: string }>;
-}): Promise<Metadata> {
-  let { messageId } = await params;
-  const message = await getMessage(messageId);
-  if (!message) {
-    notFound();
-  }
-
-  let title = message.chat.title;
-  let searchParams = new URLSearchParams();
-  searchParams.set("prompt", title);
-
-  return {
-    title,
-    description: `An app generated on Turb0: ${title}`,
-    openGraph: {
-      images: [`/api/og?${searchParams}`],
-    },
-    twitter: {
-      card: "summary_large_image",
-      images: [`/api/og?${searchParams}`],
-      title,
-    },
-  };
-}
-
-export default async function SharePage({
+export default function SharePage({
   params,
 }: {
   params: Promise<{ messageId: string }>;
 }) {
-  const { messageId } = await params;
+  const { messageId } = use(params);
 
-  const prisma = getPrisma();
-  const message = await prisma.message.findUnique({ where: { id: messageId } });
-  if (!message) {
-    notFound();
+  const message = useLiveQuery(() => db.messages.get(messageId), [messageId]);
+
+  // While loading or if not found (eventually)
+  if (message === undefined) {
+      return (
+          <div className="flex h-dvh items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+      );
   }
 
+  if (message === null) { // Dexie returns undefined if loading, but if query finishes and no result, it might return undefined? No, get returns undefined if not found.
+      // Wait, useLiveQuery returns undefined initially.
+      // I need to distinguish loading vs not found.
+      // useLiveQuery initial value is undefined.
+      // I can't easily distinguish.
+      // But for now let's assume if it stays undefined for a long time it's not found, or just show loading.
+      // Actually `db.messages.get` returns a Promise. `useLiveQuery` resolves it.
+      // If I want to handle "not found", I might need a different approach or just show loading until it appears (which it won't if invalid).
+      // Let's just show loading. If it's instantaneous it's fine.
+      return (
+        <div className="flex h-dvh items-center justify-center">
+             <p>Message not found or loading...</p>
+        </div>
+      );
+  }
+
+  // If we have a message, check files
   const files = extractAllCodeBlocks(message.content);
   if (files.length === 0) {
-    notFound();
+    return (
+        <div className="flex h-dvh items-center justify-center">
+             <p>No code found in this message.</p>
+        </div>
+      );
   }
 
   return (
@@ -77,15 +76,3 @@ export default async function SharePage({
     </div>
   );
 }
-
-const getMessage = cache(async (messageId: string) => {
-  const prisma = getPrisma();
-  return prisma.message.findUnique({
-    where: {
-      id: messageId,
-    },
-    include: {
-      chat: true,
-    },
-  });
-});

@@ -18,7 +18,7 @@ import {
   toTitleCase,
 } from "@/lib/utils";
 import { useState, useEffect } from "react";
-import type { Chat, Message } from "./page";
+import type { ChatWithMessages, Message } from "@/lib/db";
 import { Share } from "./share";
 import { StickToBottom } from "use-stick-to-bottom";
 import JSZip from "jszip";
@@ -45,7 +45,7 @@ export default function CodeViewer({
   onRequestFix,
   onRestore,
 }: {
-  chat: Chat;
+  chat: ChatWithMessages;
   streamText: string;
   message?: Message;
   onMessageChange: (v: Message) => void;

@@ -4,16 +4,17 @@ import ArrowRightIcon from "@/components/icons/arrow-right";
 import Spinner from "@/components/spinner";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { createMessage } from "../../actions";
-import { type Chat } from "./page";
+import { type ChatWithMessages } from "@/lib/db";
 import { MODELS } from "@/lib/constants";
+import { db } from "@/lib/db";
+import { nanoid } from "nanoid";
 
 export default function ChatBox({
   chat,
   onNewStreamPromise,
   isStreaming,
 }: {
-  chat: Chat;
+  chat: ChatWithMessages;
   onNewStreamPromise: (v: Promise<ReadableStream>) => void;
   isStreaming: boolean;
 }) {
@@ -42,20 +43,43 @@ export default function ChatBox({
     }
   }, [disabled]);
 
+  async function handleCreateMessage(chatId: string, text: string, role: "user" | "assistant") {
+     const maxPosition = Math.max(...chat.messages.map((m) => m.position), 0);
+     const newMessage = {
+         id: nanoid(),
+         chatId,
+         role,
+         content: text,
+         files: null,
+         position: maxPosition + 1,
+         createdAt: new Date()
+     };
+     await db.messages.add(newMessage);
+     return newMessage;
+  }
+
   return (
     <div className="mx-auto mb-5 flex w-full max-w-prose shrink-0 px-4">
       <form
         className="relative flex w-full"
         action={async () => {
           startTransition(async () => {
-            const message = await createMessage(chat.id, prompt, "user");
+            const message = await handleCreateMessage(chat.id, prompt, "user");
+
+            // We need to pass all previous messages plus the new one to the API
+            const allMessages = [...chat.messages, message].map(m => ({
+                role: m.role,
+                content: m.content
+            }));
+
             const streamPromise = fetch(
               "/api/get-next-completion-stream-promise",
               {
                 method: "POST",
                 body: JSON.stringify({
-                  messageId: message.id,
+                  messages: allMessages,
                   model: chat.model,
+                  chatId: chat.id
                 }),
               },
             ).then((res) => {
@@ -67,7 +91,7 @@ export default function ChatBox({
 
             onNewStreamPromise(streamPromise);
             startTransition(() => {
-              router.refresh();
+              // router.refresh(); // Not needed with Dexie useLiveQuery
               setPrompt("");
             });
           });

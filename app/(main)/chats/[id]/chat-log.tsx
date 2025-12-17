@@ -1,6 +1,6 @@
 "use client";
 
-import type { Chat, Message } from "./page";
+import type { ChatWithMessages, Message } from "@/lib/db";
 import {
   parseReplySegments,
   extractFirstCodeBlock,
@@ -18,7 +18,7 @@ export default function ChatLog({
   streamText,
   onMessageClick,
 }: {
-  chat: Chat;
+  chat: ChatWithMessages;
   activeMessage?: Message;
   streamText: string;
   onMessageClick: (v: Message) => void;
@@ -47,7 +47,7 @@ export default function ChatLog({
         />
         <UserMessage content={chat.prompt} />
 
-        {chat.totalMessages > chat.messages.length && (
+        {(chat.totalMessages || 0) > chat.messages.length && (
           <div className="py-2 text-center text-sm text-gray-500">
             Only last messages loaded. Full history not available.
           </div>

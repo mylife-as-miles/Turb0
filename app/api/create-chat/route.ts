@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPrisma } from "@/lib/prisma";
 import {
   getMainCodingPrompt,
   screenshotToCodePrompt,
@@ -11,25 +10,19 @@ export async function POST(request: NextRequest) {
   try {
     const { prompt, model, quality, screenshotUrl } = await request.json();
 
-    const prisma = getPrisma();
-    const chat = await prisma.chat.create({
-      data: {
-        model,
-        quality,
-        prompt,
-        title: "",
-        shadcn: true,
-      },
-    });
+    // We no longer interact with the DB here.
+    // We just prepare the data for the client to save.
 
     let options: ConstructorParameters<typeof Together>[0] = {};
     if (process.env.HELICONE_API_KEY) {
       options.baseURL = "https://together.helicone.ai/v1";
       options.defaultHeaders = {
         "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-        "Helicone-Property-appname": "LlamaCoder",
-        "Helicone-Session-Id": chat.id,
-        "Helicone-Session-Name": "LlamaCoder Chat",
+        "Helicone-Property-appname": "Turb0",
+        // We don't have a chat ID yet, or the client needs to generate it.
+        // For now, we can omit session ID or let the client pass a generated one if needed later.
+        // But for initial plan generation, it's fine.
+        "Helicone-Session-Name": "Turb0 Chat Init",
       };
     }
 
@@ -115,7 +108,6 @@ export async function POST(request: NextRequest) {
     if (quality === "high") {
       let initialRes = await together.chat.completions.create({
         model: "Qwen/Qwen3-Next-80B-A3B-Instruct",
-        // model: "moonshotai/Kimi-K2-Thinking",
         messages: [
           {
             role: "system",
@@ -144,38 +136,17 @@ export async function POST(request: NextRequest) {
       userMessage = prompt;
     }
 
-    let newChat = await prisma.chat.update({
-      where: {
-        id: chat.id,
-      },
-      data: {
-        title,
-        messages: {
-          createMany: {
-            data: [
-              {
-                role: "system",
-                content: getMainCodingPrompt(mostSimilarExample),
-                position: 0,
-              },
-              { role: "user", content: userMessage, position: 1 },
-            ],
-          },
-        },
-      },
-      include: {
-        messages: true,
-      },
-    });
-
-    const lastMessage = newChat.messages
-      .sort((a, b) => a.position - b.position)
-      .at(-1);
-    if (!lastMessage) throw new Error("No new message");
-
+    // Return the data necessary for the client to create the chat
     return NextResponse.json({
-      chatId: chat.id,
-      lastMessageId: lastMessage.id,
+      title,
+      messages: [
+        {
+          role: "system",
+          content: getMainCodingPrompt(mostSimilarExample),
+          position: 0,
+        },
+        { role: "user", content: userMessage, position: 1 },
+      ],
     });
   } catch (error) {
     console.error("Error creating chat:", error);

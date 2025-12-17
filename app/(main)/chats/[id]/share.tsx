@@ -2,7 +2,7 @@
 
 import ShareIcon from "@/components/icons/share-icon";
 import { toast } from "@/hooks/use-toast";
-import { Message } from "@prisma/client";
+import { Message } from "@/lib/db";
 
 export function Share({ message }: { message?: Message }) {
   async function shareAction() {
@@ -12,8 +12,8 @@ export function Share({ message }: { message?: Message }) {
     const shareUrl = new URL(`/share/v2/${message.id}`, baseUrl);
 
     toast({
-      title: "App Published!",
-      description: `App URL copied to clipboard: ${shareUrl.href}`,
+      title: "App Link Copied",
+      description: `Note: This link only works on this device/browser (local DB).`,
       variant: "default",
     });
 

@@ -28,6 +28,8 @@ import Header from "@/components/header";
 import { useS3Upload } from "next-s3-upload";
 import UploadIcon from "@/components/icons/upload-icon";
 import { MODELS, SUGGESTED_PROMPTS } from "@/lib/constants";
+import { db } from "@/lib/db";
+import { nanoid } from "nanoid";
 
 export default function Home() {
   const { setStreamPromise } = use(Context);
@@ -146,13 +148,43 @@ export default function Home() {
                   throw new Error("Failed to create chat");
                 }
 
-                const { chatId, lastMessageId } = await response.json();
+                const { title, messages } = await response.json();
+
+                // Create chat in Dexie
+                const chatId = nanoid();
+                await db.chats.add({
+                    id: chatId,
+                    model,
+                    quality,
+                    prompt,
+                    title,
+                    llamaCoderVersion: "v2",
+                    shadcn: true,
+                    createdAt: new Date()
+                });
+
+                // Create messages in Dexie
+                const messageObjects = messages.map((msg: any) => ({
+                    id: nanoid(),
+                    role: msg.role,
+                    content: msg.content,
+                    chatId: chatId,
+                    position: msg.position,
+                    createdAt: new Date(),
+                }));
+
+                await db.messages.bulkAdd(messageObjects);
+                const lastMessageId = messageObjects[messageObjects.length - 1].id;
 
                 const streamPromise = fetch(
                   "/api/get-next-completion-stream-promise",
                   {
                     method: "POST",
-                    body: JSON.stringify({ messageId: lastMessageId, model }),
+                    body: JSON.stringify({
+                        messages: messageObjects.map((m: any) => ({ role: m.role, content: m.content })),
+                        model,
+                        chatId
+                    }),
                   },
                 ).then((res) => {
                   if (!res.body) {
