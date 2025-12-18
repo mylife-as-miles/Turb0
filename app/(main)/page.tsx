@@ -103,18 +103,6 @@ export default function Home() {
         <Header />
 
         <div className="mt-10 flex grow flex-col items-center px-4 lg:mt-16">
-          <a
-            className="mb-4 inline-flex shrink-0 items-center rounded-full border-[0.5px] border-[#BABABA] px-3.5 py-1.5 text-xs text-black transition-shadow"
-            href="https://togetherai.link/?utm_source=llamacoder&utm_medium=referral&utm_campaign=example-app"
-            target="_blank"
-          >
-            <span className="text-center">
-              Powered by <span className="font-semibold">Together AI</span>.
-              Used by
-              <span className="font-semibold"> 1.1M+ users. </span>
-            </span>
-          </a>
-
           <h1 className="mt-4 text-balance text-center text-4xl leading-none text-gray-700 md:text-[64px] lg:mt-8">
             Turn your <span className="text-blue-500">idea</span>
             <br className="hidden md:block" /> into an{" "}
@@ -480,20 +468,7 @@ const Footer = memo(() => {
       <div>
         <div className="font-medium">
           Built with{" "}
-          <a
-            href="https://togetherai.link/?utm_source=llamacoder&utm_medium=referral&utm_campaign=example-app"
-            className="font-semibold text-blue-600 underline-offset-4 transition hover:text-gray-700 hover:underline"
-          >
-            Llama
-          </a>{" "}
-          and{" "}
-          <a
-            href="https://togetherai.link/?utm_source=llamacoder&utm_medium=referral&utm_campaign=example-app"
-            className="font-semibold text-blue-600 underline-offset-4 transition hover:text-gray-700 hover:underline"
-          >
-            Together AI
-          </a>
-          .
+          <span className="font-semibold text-blue-600">Zir0</span>.
         </div>
       </div>
       <div className="flex items-center gap-4 pb-4 sm:pb-0">
